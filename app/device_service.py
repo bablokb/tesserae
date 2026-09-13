@@ -940,6 +940,70 @@ def update_instance_renderer(
     return InstanceResult(reloaded), True
 
 
+def set_instance_renderer_id(
+    *,
+    devices: DeviceRegistry,
+    renderers: RendererRegistry,
+    data_root: Path,
+    instance_id: str,
+    renderer_id: str | None,
+) -> tuple[InstanceResult, bool]:
+    """Pin an instance to a specific one of its kind's renderers, chosen
+    by the operator on the device card (Settings -> Devices -> Rendering).
+
+    The kind-list wire-up: :func:`renderer_id_for_format` disambiguates by
+    file extension, which can't tell two same-extension renderers apart
+    (``trmnl_png`` vs ``trmnl_png_gray16``, both ``.png``). This is the
+    explicit pick for that case.
+
+    ``renderer_id`` of ``None`` or the kind's primary (first) renderer
+    clears the pin so the instance follows the kind default again. A value
+    the kind doesn't offer is an error. A no-op change returns
+    ``(result, False)``.
+
+    Returns ``(result, changed)``; ``changed`` is True only when the
+    renderer actually moved, so the caller can invalidate the device's
+    now-stale render (produced by the old renderer, possibly a different
+    format).
+    """
+    device = devices.get(instance_id)
+    if device is None or device.kind_of is None:
+        return InstanceResult(None, f"Unknown device {instance_id!r}."), False
+    kind = devices.get(device.kind_of)
+    kind_renderer_ids = list(getattr(kind, "renderer_ids", []))
+    if not kind_renderer_ids:
+        return InstanceResult(None, f"{device.name} has no configurable renderers."), False
+
+    primary = kind_renderer_ids[0]
+    target = renderer_id or primary
+    if target not in kind_renderer_ids:
+        return InstanceResult(None, f"Unknown renderer {target!r} for this device."), False
+
+    current = device.manifest.get("renderer_id") or primary
+    if target == current:
+        return InstanceResult(device), False
+
+    inst_file = device.path
+    try:
+        raw = json.loads(inst_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as err:
+        return InstanceResult(None, f"Couldn't read {inst_file.name}: {err}"), False
+    if target == primary:
+        raw.pop("renderer_id", None)  # back to the kind default; don't pin
+    else:
+        raw["renderer_id"] = target
+    inst_file.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
+
+    devices.devices.pop(instance_id, None)
+    _drop_clones(renderers, instance_id)
+    reloaded = load_instance_file(devices, inst_file=inst_file, data_root=data_root)
+    if reloaded is None:
+        last_err = devices.errors[-1] if devices.errors else None
+        return InstanceResult(None, last_err.message if last_err else "unknown error"), False
+    clone_for_instances(renderers, devices)
+    return InstanceResult(reloaded), True
+
+
 def kind_protocol(kind: Device) -> str:
     """The wire protocol a kind speaks. Hardware-catalog SKUs carry it
     under ``_catalog_entry.protocol``; a folder-defined protocol kind is

@@ -1134,6 +1134,34 @@ def devices_update_combined(instance_id: str) -> Response:
                 ok_messages.append(f"renamed to {new_name!r}")
                 any_change = True
 
+    # 0b. Renderer pick. A kind that lists more than one renderer of the
+    # same wire format (trmnl_client: 1-bit trmnl_png vs 16-grey
+    # trmnl_png_gray16) can't be disambiguated by extension, so the
+    # operator chooses on the card. Run before the config / picture-
+    # quality steps so those see the freshly-cloned renderer. On a real
+    # change the device's registry entry is replaced and its cached
+    # render dropped (it may be a different format); refresh the local
+    # ``device`` handle the later steps use.
+    if "renderer_id" in form:
+        picked = (form.get("renderer_id") or "").strip() or None
+        rp_result, rp_changed = device_service.set_instance_renderer_id(
+            devices=devices_registry,
+            renderers=renderers(),
+            data_root=device_data_root(),
+            instance_id=instance_id,
+            renderer_id=picked,
+        )
+        if not rp_result.ok:
+            flash(rp_result.error or "Couldn't switch renderer.", "error")
+        elif rp_changed and rp_result.device is not None:
+            pm = current_app.config.get("PUSH_MANAGER")
+            if pm is not None:
+                pm.invalidate_latest_render(instance_id)
+            device = rp_result.device
+            renderer_loader.seed_device_settings_from_base(renderers(), store)
+            ok_messages.append("renderer switched")
+            any_change = True
+
     # 1. Renderer-defined config fields. Mirror settings_update("device-<id>").
     # Two paths: MQTT devices publish when ``config_topic`` is set;
     # REST devices save only and pick up config on their next status

@@ -35,6 +35,12 @@ All notable changes to Tesserae are recorded here. Format loosely follows
 
 ### Fixed
 
+- **Upgrading a catalog bundle removes the widgets it dropped.** When a
+  new release of a bundle renames or drops a folder, the marketplace
+  installer now deletes the old folder instead of leaving it behind as an
+  untracked plugin that still loads against the new shared code and could
+  never be uninstalled from the catalog page.
+
 - A sleeping REST device woken for a daily lineup no longer collects the
   previous day's frame. The device was told to poll 20 s after the lineup's
   target, but the scheduler fires on a 30 s tick and renders each due lineup
@@ -108,6 +114,21 @@ All notable changes to Tesserae are recorded here. Format loosely follows
   Paper Pro, driven by the community tesserae.remarkable AppLoad client over
   the v1 REST device API. The reMarkable 2 is confirmed on hardware; the
   other two are built from the same code paths and await confirmation.
+- 16-level greyscale over TRMNL BYOS. A new `trmnl_png_gray16` renderer: the
+  same fit / flip / underscan / contrast / dither pipeline as `trmnl_png`, but
+  quantised to a 16-entry grey ramp and saved as an 8-bit greyscale PNG. For
+  panels that paint real greys over the BYOS `/api/display` path — the Seeed
+  reTerminal E1003 / TRMNL X 16-level waveform, and jailbroken e-readers
+  running KOReader (Kobo Clara HD, Kindle Paperwhite) whose framebuffer is
+  8-bit grey — where 1-bit output turns every chart fill and shaded band into
+  coarse error-diffusion speckle. Honours a device's measured grey ramp when a
+  greyscale calibration profile is applied (same `_gray_ramp` side channel
+  `esp32_gray_bin` reads). `trmnl_client` now lists both renderers.
+- Renderer picker on the device card (Settings → Devices → General). Shown only
+  when a device's kind offers more than one renderer of the same wire format
+  that the extension-matching auto-select can't tell apart — today that is
+  `trmnl_client` (1-bit `trmnl_png` vs 16-grey `trmnl_png_gray16`). Switching
+  repins the instance and drops its stale render so the next poll re-renders.
 - Any webfont in canvas pages and code elements, cached server-side. A new
   `add_font` MCP tool (`POST /api/mcp/fonts`) fetches a Google Fonts family by
   name at chosen weights and styles, or one face from a direct .woff2 / .ttf

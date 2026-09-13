@@ -684,6 +684,22 @@ class Marketplace:
                 if backup is not None and backup.exists():
                     shutil.rmtree(backup, ignore_errors=True)
 
+            # Folders the previous release owned but this one no longer
+            # ships (a bundle renamed or dropped a widget) would otherwise
+            # stay on disk as untracked plugins: still loaded, possibly
+            # broken against the new shared code, and unreachable from
+            # uninstall because the new record doesn't list them.
+            for stale_id in sorted(owned_folders - set(layout)):
+                stale = self._plugins_dir / stale_id
+                if stale.exists():
+                    shutil.rmtree(stale, ignore_errors=True)
+                    logger.info(
+                        "marketplace: removed %s, no longer part of %s v%s",
+                        stale_id,
+                        entry.id,
+                        entry.release_version,
+                    )
+
         record = InstalledRecord(
             catalog_id=entry.id,
             folders=sorted(layout.keys()),

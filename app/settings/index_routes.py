@@ -521,6 +521,29 @@ def _orphan_state_counts_for(device: Device) -> dict[str, Any]:
     }
 
 
+def _renderer_choice_for(device: Device) -> dict[str, Any] | None:
+    """The renderer picker for a device whose kind offers more than one.
+
+    Most kinds have a single renderer, so this returns ``None`` and the
+    card shows no picker. When a kind lists two or more (``trmnl_client``:
+    1-bit ``trmnl_png`` vs 16-grey ``trmnl_png_gray16``), surface a
+    dropdown: the extension-matching auto-select can't tell two ``.png``
+    renderers apart, so the operator picks. ``value`` is the active
+    renderer id (the kind's first when nothing is pinned)."""
+    if device.kind_of is None:
+        return None
+    kind = devices().get(device.kind_of)
+    rids = list(getattr(kind, "renderer_ids", []))
+    if len(rids) < 2:
+        return None
+    reg = renderers()
+    options: list[dict[str, str]] = []
+    for rid in rids:
+        base = reg.get(rid)
+        options.append({"value": rid, "label": base.name if base is not None else rid})
+    return {"options": options, "value": device.manifest.get("renderer_id") or rids[0]}
+
+
 def _has_custom_image(instance_id: str) -> bool:
     """True when the device has a user-uploaded calibration image on
     disk. Used to conditionally surface the "Your uploaded image"
@@ -954,6 +977,10 @@ def _build_sections() -> list[dict[str, Any]]:
                 "icon": device.icon,
                 "blurb": device.manifest.get("description") or "",
                 "fields": fields,
+                # Renderer picker: only present when the device's kind
+                # offers more than one renderer (trmnl_client: 1-bit vs
+                # 16-grey PNG). None hides the control via a Jinja check.
+                "renderer_choice": (_renderer_choice_for(device) if is_instance else None),
                 "state": (store.get_for_runtime("devices", device.id, fields) if fields else {}),
                 "endpoint": (url_for("auth.settings_update", section_kind=sid) if fields else None),
                 # Single Save for the whole device card, the template
