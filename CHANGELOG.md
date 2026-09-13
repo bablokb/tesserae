@@ -35,6 +35,12 @@ All notable changes to Tesserae are recorded here. Format loosely follows
 
 ### Fixed
 
+- **Upgrading a catalog bundle removes the widgets it dropped.** When a
+  new release of a bundle renames or drops a folder, the marketplace
+  installer now deletes the old folder instead of leaving it behind as an
+  untracked plugin that still loads against the new shared code and could
+  never be uninstalled from the catalog page.
+
 - A sleeping REST device woken for a daily lineup no longer collects the
   previous day's frame. The device was told to poll 20 s after the lineup's
   target, but the scheduler fires on a 30 s tick and renders each due lineup

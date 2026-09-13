@@ -1001,6 +1001,56 @@ def test_bundle_reinstall_replaces_in_place(
     assert fresh_core["name"] == "Core v1"
 
 
+def test_bundle_upgrade_removes_folders_the_new_release_dropped(
+    marketplace: Marketplace, url_fixture: dict[str, bytes]
+) -> None:
+    """When a bundle renames or drops a widget between releases, the
+    old folder must not survive the upgrade as an untracked plugin: it
+    would keep loading against the new shared code and could never be
+    uninstalled through the catalog."""
+    t1 = _make_bundle_tarball(
+        wrapper="bundle-1.0",
+        folders={
+            "core": _github_manifest("Core v0"),
+            "projects": _github_manifest("Projects"),
+        },
+    )
+    url1 = "https://example.invalid/v1.tar.gz"
+    url_fixture[url1] = t1
+    entry1 = _make_catalog_entry(
+        widget_id="bundle",
+        sha256=_sha256(t1),
+        tarball_url=url1,
+        folders=["core", "projects"],
+    )
+    marketplace.install(entry1)
+    assert (marketplace._plugins_dir / "projects").exists()
+
+    t2 = _make_bundle_tarball(
+        wrapper="bundle-1.1",
+        folders={
+            "core": _github_manifest("Core v1"),
+            "list": _github_manifest("List"),
+        },
+    )
+    url2 = "https://example.invalid/v2.tar.gz"
+    url_fixture[url2] = t2
+    entry2 = _make_catalog_entry(
+        widget_id="bundle",
+        version="0.0.2",
+        sha256=_sha256(t2),
+        tarball_url=url2,
+        folders=["core", "list"],
+    )
+    marketplace.install(entry2)
+
+    plugins_dir = marketplace._plugins_dir
+    assert not (plugins_dir / "projects").exists()
+    assert (plugins_dir / "list" / "plugin.json").exists()
+    assert (plugins_dir / "core" / "plugin.json").exists()
+    assert marketplace.installed()["bundle"].folders == ["core", "list"]
+
+
 def test_uninstall_adopts_prebundled_folders_without_record(
     marketplace: Marketplace, url_fixture: dict[str, bytes], tmp_path: Path
 ) -> None:
