@@ -430,8 +430,9 @@ def display() -> Response | tuple[Response, int]:
         )
         filename = f"placeholder-{device.id}-{w}x{h}.png"
 
-    # TEMPORARY debug line (session diagnostic, not part of the F2 diff):
-    # confirms exactly when a client polls and picks up a given render.
+    # One line per successful poll, so a poll can be matched to the render
+    # it collected and the cadence it was told to come back on. Rejected
+    # and unknown-token polls were already logged; this is the other half.
     logger.info(
         "trmnl: served /api/display to device=%s filename=%s refresh_rate=%s",
         device.id,
