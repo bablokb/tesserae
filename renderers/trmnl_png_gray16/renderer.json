@@ -1,0 +1,42 @@
+{
+  "tesserae_compat": "1.x",
+  "name": "TRMNL client (16-grey PNG)",
+  "version": "0.1.0",
+  "description": "Composition PNG fitted to the device's panel size, then quantised to a 16-level greyscale PNG with the selected dither. For TRMNL BYOS panels that paint real greys rather than 1-bit black/white: jailbroken e-readers running KOReader (confirmed on a Kobo Clara HD; Kindle Paperwhite expected to behave the same), and the Seeed reTerminal E1003 / TRMNL X 16-level waveform under TRMNL firmware, which is untested. Output is an 8-bit greyscale PNG using 16 distinct levels; a client that can only paint 1-bit should stay on trmnl_png. Per-device picture quality (dither / contrast) lives on the device card.",
+  "orientation": "composition",
+  "mime": "image/png",
+  "extension": "png",
+  "topic_pattern": "tesserae/{device}/frame/trmnl",
+  "device": "trmnl",
+  "retain": false,
+  "settings": [
+    {
+      "name": "dither",
+      "type": "select",
+      "label": "Dither mode",
+      "default": "floyd-steinberg",
+      "device_setting": true,
+      "choices": [
+        { "value": "floyd-steinberg", "label": "Floyd-Steinberg (smooth gradients)" },
+        { "value": "atkinson", "label": "Atkinson (contrasty, clean solids)" },
+        { "value": "jarvis", "label": "Jarvis-Judice-Ninke (smoothest)" },
+        { "value": "stucki", "label": "Stucki" },
+        { "value": "bayer-8x8", "label": "Bayer 8x8 (ordered)" },
+        { "value": "halftone", "label": "Halftone dots" },
+        { "value": "crosshatch", "label": "Crosshatch" },
+        { "value": "none", "label": "None (nearest grey level)" }
+      ]
+    },
+    {
+      "name": "contrast",
+      "type": "slider",
+      "label": "Pre-dither contrast",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.5,
+      "step": 0.05,
+      "device_setting": true,
+      "help": "Push midtones toward black or white before the dither pass. 1.0 leaves the image alone; > 1.0 deepens contrast (good for photos with grey skies); < 1.0 softens (good for text-heavy dashboards)."
+    }
+  ]
+}

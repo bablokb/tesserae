@@ -418,6 +418,21 @@
         {% endfor %}
         {% endif %}
 
+        {# Renderer picker. Only rendered when the device's kind offers
+           more than one renderer of the same wire format that the
+           extension-matching auto-select can't disambiguate -- today
+           that's trmnl_client (1-bit trmnl_png vs 16-grey
+           trmnl_png_gray16). Posts ``renderer_id`` into the combined
+           form; devices_update_combined repins the instance and drops
+           its stale render. #}
+        {% if section.renderer_choice %}
+        {{ select_field(section.id ~ '-renderer', 'renderer_id', 'Renderer',
+                        value=section.renderer_choice.value,
+                        options=section.renderer_choice.options,
+                        help='Which wire format this panel is sent. Switch to a 16-grey renderer only for a panel that paints real greys (KOReader e-readers, the 16-level TRMNL waveform); a 1-bit-only client should stay on the mono renderer.',
+                        form=_combined_form_id) }}
+        {% endif %}
+
         {# Per-device locale override (see app.locale_resolve). Widgets
            placed on pages bound to this device render their panel text
            in this locale instead of the app-wide default -- the

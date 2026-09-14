@@ -201,6 +201,66 @@ def test_update_instance_renderer_noop_cases(registries) -> None:
         assert result.device.renderer_ids == ["circuitpython_bmp__cp_noop"]
 
 
+def test_set_instance_renderer_id_pins_and_clears(registries) -> None:
+    # trmnl_client offers two same-extension renderers (1-bit trmnl_png,
+    # 16-grey trmnl_png_gray16). renderer_id_for_format can't tell them
+    # apart, so the operator picks by id via set_instance_renderer_id.
+    devices, renderers, data_root = registries
+    created = device_service.create_instance(
+        devices=devices,
+        renderers=renderers,
+        data_root=data_root,
+        instance_id="kobo",
+        kind_id="trmnl_client",
+    )
+    assert created.ok and created.device.renderer_ids == ["trmnl_png__kobo"]
+
+    # Pin to the greyscale renderer.
+    result, changed = device_service.set_instance_renderer_id(
+        devices=devices,
+        renderers=renderers,
+        data_root=data_root,
+        instance_id="kobo",
+        renderer_id="trmnl_png_gray16",
+    )
+    assert changed is True and result.ok
+    assert result.device.renderer_ids == ["trmnl_png_gray16__kobo"]
+    assert renderers.get("trmnl_png__kobo") is None
+    assert json.loads((data_root / "kobo.json").read_text())["renderer_id"] == "trmnl_png_gray16"
+
+    # Re-pinning to the same renderer is a no-op.
+    _, changed = device_service.set_instance_renderer_id(
+        devices=devices,
+        renderers=renderers,
+        data_root=data_root,
+        instance_id="kobo",
+        renderer_id="trmnl_png_gray16",
+    )
+    assert changed is False
+
+    # Clearing (None, or the kind's primary) drops the pin entirely.
+    result, changed = device_service.set_instance_renderer_id(
+        devices=devices,
+        renderers=renderers,
+        data_root=data_root,
+        instance_id="kobo",
+        renderer_id=None,
+    )
+    assert changed is True and result.ok
+    assert result.device.renderer_ids == ["trmnl_png__kobo"]
+    assert "renderer_id" not in json.loads((data_root / "kobo.json").read_text())
+
+    # An id the kind doesn't offer is an error, not a silent fallback.
+    result, changed = device_service.set_instance_renderer_id(
+        devices=devices,
+        renderers=renderers,
+        data_root=data_root,
+        instance_id="kobo",
+        renderer_id="esp32_bin",
+    )
+    assert changed is False and not result.ok
+
+
 @pytest.fixture
 def registries_with_catalog(tmp_path: Path):
     """Like ``registries`` but with the hardware catalog layered in, so

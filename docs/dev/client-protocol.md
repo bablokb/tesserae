@@ -1427,14 +1427,26 @@ library your platform provides (`adafruit_imageload`, Pillow,
 fields are hints for client-side fit; if your display library handles
 that natively, ignore them.
 
-The TRMNL variant is dithered to 1-bit B/W (every pixel either 0 or
-255) server-side; the dither algorithm + contrast curve are device
-settings (Settings → Devices → trmnl_client) rather than envelope
-fields, so the wire payload is just `{"url": "..."}` like the other
-bin/png variants.
+The TRMNL variant comes in two flavours, both on the same `/api/display`
+path with the same `{"url": "..."}` payload; the dither algorithm +
+contrast curve are device settings (Settings → Devices → General)
+rather than envelope fields:
+
+- **`trmnl_png`** — dithered to 1-bit B/W (every pixel either 0 or 255).
+  The default; right for TRMNL OG / X mono panels and any client that
+  can only blit 1bpp.
+- **`trmnl_png_gray16`** — dithered to 16 grey levels, saved as an 8-bit
+  greyscale PNG (mode `L`) carrying at most 16 distinct values. For
+  panels that paint real greys: a KOReader e-reader whose framebuffer is
+  8-bit grey (confirmed on a Kobo Clara HD), or the E1003 / TRMNL X
+  16-level waveform under TRMNL firmware (untested). Decode is the
+  same `RenderImage` / lodepng / `stb_image` path; a 1-bit-only client
+  should stay on `trmnl_png`. Pick it per device with the Renderer
+  dropdown on the device card.
 
 Reference: [`renderers/pi_png/renderer.py`](https://github.com/dmellok/tesserae/blob/main/renderers/pi_png/renderer.py),
-[`renderers/trmnl/renderer.py`](https://github.com/dmellok/tesserae/blob/main/renderers/trmnl/renderer.py).
+[`renderers/trmnl_png/renderer.py`](https://github.com/dmellok/tesserae/blob/main/renderers/trmnl_png/renderer.py),
+[`renderers/trmnl_png_gray16/renderer.py`](https://github.com/dmellok/tesserae/blob/main/renderers/trmnl_png_gray16/renderer.py).
 
 ### CircuitPython indexed `.png` / `.bmp`
 
