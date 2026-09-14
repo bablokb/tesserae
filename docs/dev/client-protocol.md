@@ -1437,8 +1437,9 @@ rather than envelope fields:
   can only blit 1bpp.
 - **`trmnl_png_gray16`** — dithered to 16 grey levels, saved as an 8-bit
   greyscale PNG (mode `L`) carrying at most 16 distinct values. For
-  panels that paint real greys: the E1003 / TRMNL X 16-level waveform,
-  or a KOReader e-reader whose framebuffer is 8-bit grey. Decode is the
+  panels that paint real greys: a KOReader e-reader whose framebuffer is
+  8-bit grey (confirmed on a Kobo Clara HD), or the E1003 / TRMNL X
+  16-level waveform under TRMNL firmware (untested). Decode is the
   same `RenderImage` / lodepng / `stb_image` path; a 1-bit-only client
   should stay on `trmnl_png`. Pick it per device with the Renderer
   dropdown on the device card.

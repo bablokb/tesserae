@@ -11,9 +11,10 @@ Why a separate renderer from ``trmnl_png``:
 
 * ``trmnl_png`` outputs 1-bit B/W, right for TRMNL OG / X mono panels and
   any client that can only blit 1bpp.
-* A panel that paints real greys (Seeed reTerminal E1003 / TRMNL X in
-  their 16-level waveform mode, or a jailbroken e-reader running KOReader
-  whose framebuffer is 8-bit greyscale) throws away most of that
+* A panel that paints real greys (a jailbroken e-reader running KOReader
+  whose framebuffer is 8-bit greyscale, confirmed on a Kobo Clara HD; the
+  Seeed reTerminal E1003 / TRMNL X 16-level waveform under TRMNL firmware
+  is the other candidate, untested) throws away most of that
   capability on 1-bit output: a weather-chart area fill or a shaded
   forecast band becomes coarse error-diffusion speckle instead of a
   smooth mid-grey.

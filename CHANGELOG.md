@@ -117,10 +117,10 @@ All notable changes to Tesserae are recorded here. Format loosely follows
 - 16-level greyscale over TRMNL BYOS. A new `trmnl_png_gray16` renderer: the
   same fit / flip / underscan / contrast / dither pipeline as `trmnl_png`, but
   quantised to a 16-entry grey ramp and saved as an 8-bit greyscale PNG. For
-  panels that paint real greys over the BYOS `/api/display` path — the Seeed
-  reTerminal E1003 / TRMNL X 16-level waveform, and jailbroken e-readers
-  running KOReader (Kobo Clara HD, Kindle Paperwhite) whose framebuffer is
-  8-bit grey — where 1-bit output turns every chart fill and shaded band into
+  panels that paint real greys over the BYOS `/api/display` path, jailbroken
+  e-readers running KOReader (confirmed on a Kobo Clara HD) and, untested, the
+  Seeed reTerminal E1003 / TRMNL X 16-level waveform under TRMNL firmware,
+  where 1-bit output turns every chart fill and shaded band into
   coarse error-diffusion speckle. Honours a device's measured grey ramp when a
   greyscale calibration profile is applied (same `_gray_ramp` side channel
   `esp32_gray_bin` reads). `trmnl_client` now lists both renderers.
